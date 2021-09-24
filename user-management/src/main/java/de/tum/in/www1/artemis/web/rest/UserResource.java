@@ -6,6 +6,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.List;
 
+import de.tum.in.www1.artemis.security.ArtemisAuthenticationProvider;
 import de.tum.in.www1.artemis.web.rest.vm.ManagedUserVM;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -71,19 +72,18 @@ public class UserResource {
 
     private final UserCreationService userCreationService;
 
-    // private final ArtemisAuthenticationProvider artemisAuthenticationProvider;
+    private final ArtemisAuthenticationProvider artemisAuthenticationProvider;
 
     private final UserRepository userRepository;
 
     private final AuthorityRepository authorityRepository;
 
     public UserResource(UserRepository userRepository, UserService userService, UserCreationService userCreationService,
-                        // ArtemisAuthenticationProvider artemisAuthenticationProvider,
-                        AuthorityRepository authorityRepository) {
+                        ArtemisAuthenticationProvider artemisAuthenticationProvider, AuthorityRepository authorityRepository) {
         this.userRepository = userRepository;
         this.userService = userService;
         this.userCreationService = userCreationService;
-        // this.artemisAuthenticationProvider = artemisAuthenticationProvider;
+        this.artemisAuthenticationProvider = artemisAuthenticationProvider;
         this.authorityRepository = authorityRepository;
     }
 
@@ -129,8 +129,8 @@ public class UserResource {
             throw new LoginAlreadyUsedException();
         } else if (userRepository.findOneByEmailIgnoreCase(managedUserVM.getEmail()).isPresent()) {
             throw new EmailAlreadyUsedException();
-//        } else if (managedUserVM.getGroups().stream().anyMatch(group -> !artemisAuthenticationProvider.isGroupAvailable(group))) {
-//            throw new EntityNotFoundException("Not all groups are available: " + managedUserVM.getGroups());
+        } else if (managedUserVM.getGroups().stream().anyMatch(group -> !artemisAuthenticationProvider.isGroupAvailable(group))) {
+            throw new EntityNotFoundException("Not all groups are available: " + managedUserVM.getGroups());
         } else {
             User newUser = userCreationService.createUser(managedUserVM);
 
@@ -165,9 +165,9 @@ public class UserResource {
             throw new LoginAlreadyUsedException();
         }
 
-//        if (managedUserVM.getGroups().stream().anyMatch(group -> !artemisAuthenticationProvider.isGroupAvailable(group))) {
-//            throw new EntityNotFoundException("Not all groups are available: " + managedUserVM.getGroups());
-//        }
+        if (managedUserVM.getGroups().stream().anyMatch(group -> !artemisAuthenticationProvider.isGroupAvailable(group))) {
+            throw new EntityNotFoundException("Not all groups are available: " + managedUserVM.getGroups());
+        }
 
         var existingUser = userRepository.findByIdWithGroupsAndAuthoritiesAndOrganizationsElseThrow(managedUserVM.getId());
 

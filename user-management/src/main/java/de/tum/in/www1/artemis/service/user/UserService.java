@@ -8,7 +8,7 @@ import de.tum.in.www1.artemis.repository.AuthorityRepository;
 import de.tum.in.www1.artemis.repository.GuidedTourSettingsRepository;
 import de.tum.in.www1.artemis.repository.StudentScoreRepository;
 import de.tum.in.www1.artemis.repository.UserRepository;
-// import de.tum.in.www1.artemis.security.ArtemisAuthenticationProvider;
+import de.tum.in.www1.artemis.security.ArtemisAuthenticationProvider;
 import de.tum.in.www1.artemis.security.SecurityUtils;
 //import de.tum.in.www1.artemis.service.connectors.CIUserManagementService;
 //import de.tum.in.www1.artemis.service.connectors.VcsUserManagementService;
@@ -66,9 +66,9 @@ public class UserService {
     //
     // private final Optional<CIUserManagementService> optionalCIUserManagementService;
     //
-    //// private final ArtemisAuthenticationProvider artemisAuthenticationProvider;
+    private final ArtemisAuthenticationProvider artemisAuthenticationProvider;
     private final GuidedTourSettingsRepository guidedTourSettingsRepository;
-    //    private final InstanceMessageSendService instanceMessageSendService;
+    //        private final InstanceMessageSendService instanceMessageSendService;
     @Value("${artemis.user-management.use-external}")
     private Boolean useExternalUserManagement;
     @Value("${artemis.user-management.internal-admin.username:#{null}}")
@@ -83,7 +83,7 @@ public class UserService {
         GuidedTourSettingsRepository guidedTourSettingsRepository,
         PasswordService passwordService,
         // Optional<VcsUserManagementService> optionalVcsUserManagementService, Optional<CIUserManagementService> optionalCIUserManagementService,
-        //// ArtemisAuthenticationProvider artemisAuthenticationProvider,
+        ArtemisAuthenticationProvider artemisAuthenticationProvider,
         StudentScoreRepository studentScoreRepository
 //        , InstanceMessageSendService instanceMessageSendService
     ) {
@@ -97,7 +97,7 @@ public class UserService {
         this.passwordService = passwordService;
         // this.optionalVcsUserManagementService = optionalVcsUserManagementService;
         // this.optionalCIUserManagementService = optionalCIUserManagementService;
-        //// this.artemisAuthenticationProvider = artemisAuthenticationProvider;
+        this.artemisAuthenticationProvider = artemisAuthenticationProvider;
         this.studentScoreRepository = studentScoreRepository;
 //        this.instanceMessageSendService = instanceMessageSendService;
     }
@@ -380,13 +380,12 @@ public class UserService {
 //     optionalVcsUserManagementService.ifPresent(vcsUserManagementService -> vcsUserManagementService.updateVcsUser(oldUserLogin, user, removedGroups, addedGroups, true));
 //     optionalCIUserManagementService.ifPresent(ciUserManagementService -> ciUserManagementService.updateUserAndGroups(oldUserLogin, user, addedGroups, removedGroups));
 
-//     removedGroups.forEach(group -> artemisAuthenticationProvider.removeUserFromGroup(user, group)); // e.g. Jira
-        // try {
-        // addedGroups.forEach(group -> artemisAuthenticationProvider.addUserToGroup(user, group)); // e.g. JIRA
-        // }
-        // catch (de.tum.in.www1.artemis.exception.ArtemisAuthenticationException e) {
-        // // This might throw exceptions, for example if the group does not exist on the authentication service. We can safely ignore it
-        // }
+        removedGroups.forEach(group -> artemisAuthenticationProvider.removeUserFromGroup(user, group)); // e.g. Jira
+        try {
+            addedGroups.forEach(group -> artemisAuthenticationProvider.addUserToGroup(user, group)); // e.g. JIRA
+        } catch (de.tum.in.www1.artemis.exception.ArtemisAuthenticationException e) {
+            // This might throw exceptions, for example if the group does not exist on the authentication service. We can safely ignore it
+        }
     }
 
     /**
@@ -496,10 +495,10 @@ public class UserService {
      *
      * @param groupName the name of the group which should be deleted
      */
-    // public void deleteGroup(String groupName) {
-    // artemisAuthenticationProvider.deleteGroup(groupName);
-    // removeGroupFromUsers(groupName);
-    // }
+    public void deleteGroup(String groupName) {
+        artemisAuthenticationProvider.deleteGroup(groupName);
+        removeGroupFromUsers(groupName);
+    }
 
     /**
      * removes the passed group from all users in the Artemis database, e.g. when the group was deleted
@@ -525,7 +524,7 @@ public class UserService {
     public void addUserToGroup(User user, String group) {
         addUserToGroupInternal(user, group); // internal Artemis database
         try {
-            // artemisAuthenticationProvider.addUserToGroup(user, group); // e.g. JIRA
+            artemisAuthenticationProvider.addUserToGroup(user, group); // e.g. JIRA
         } catch (de.tum.in.www1.artemis.exception.ArtemisAuthenticationException e) {
             // This might throw exceptions, for example if the group does not exist on the authentication service. We can safely ignore it
         }
@@ -557,7 +556,7 @@ public class UserService {
      */
     public void removeUserFromGroup(User user, String group) {
         removeUserFromGroupInternal(user, group); // internal Artemis database
-        // artemisAuthenticationProvider.removeUserFromGroup(user, group); // e.g. JIRA
+        artemisAuthenticationProvider.removeUserFromGroup(user, group); // e.g. JIRA
         // e.g. Gitlab
 //     optionalVcsUserManagementService.ifPresent(vcsUserManagementService -> vcsUserManagementService.updateVcsUser(user.getLogin(), user, Set.of(group), Set.of(), false));
 //     optionalCIUserManagementService.ifPresent(ciUserManagementService -> {
