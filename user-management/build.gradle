@@ -76,6 +76,9 @@ sourceSets {
             include 'FileService.*'
             include 'ScoreService.*'
 
+            srcDir file("../src/main/java/de/tum/in/www1/artemis/service/connectors")
+            include 'ConnectorHealth.*'
+
             srcDir '../src/main/java/de/tum/in/www1/artemis/web/rest/errors'
             include 'StudentsAlreadyAssignedException.*'
             include 'InternalServerErrorException.*'

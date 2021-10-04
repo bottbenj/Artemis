@@ -235,7 +235,7 @@ kafka:
     consumer:
         key.deserializer: org.apache.kafka.common.serialization.StringDeserializer
         value.deserializer: org.apache.kafka.common.serialization.StringDeserializer
-        group.id: user-management
+        group.id: artemis
         auto.offset.reset: earliest
     producer:
         key.serializer: org.apache.kafka.common.serialization.StringSerializer
