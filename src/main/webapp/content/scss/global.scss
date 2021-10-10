@@ -420,46 +420,46 @@ ui bootstrap tweaks
 .pagination,
 .carousel,
 .card-title a {
-    cursor: pointer;
+    cursor: pointer !important;
 }
 
 .datetime-picker-dropdown > li.date-picker-menu div > table .btn-default,
 .uib-datepicker-popup > li > div.uib-datepicker > table .btn-default {
-    border: 0;
+    border: 0 !important;
 }
 
 .datetime-picker-dropdown > li.date-picker-menu div > table:focus,
 .uib-datepicker-popup > li > div.uib-datepicker > table:focus {
-    outline: none;
+    outline: none !important;
 }
 
 .thread-dump-modal-lock {
-    max-width: 450px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    max-width: 450px !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
 }
 
 .card-header {
-    padding: 10px 15px;
-    border-bottom: 1px solid transparent;
-    border-top-right-radius: 3px;
-    border-top-left-radius: 3px;
+    padding: 10px 15px !important;
+    border-bottom: 1px solid transparent !important;
+    border-top-right-radius: 3px !important;
+    border-top-left-radius: 3px !important;
 }
 
 .card-header > .dropdown .dropdown-toggle {
-    color: inherit;
+    color: inherit !important;
 }
 
 .card-title {
-    margin-top: 0;
-    margin-bottom: 0;
-    font-size: 16px;
-    color: inherit;
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+    font-size: 16px !important;
+    color: inherit !important;
 }
 
 .card-resizable {
-    user-select: none;
+    user-select: none !important;
 }
 
 .card-title > a,
@@ -467,40 +467,40 @@ ui bootstrap tweaks
 .card-title > .small,
 .card-title > small > a,
 .card-title > .small > a {
-    color: inherit;
+    color: inherit !important;
 }
 
 .card-body {
     input {
-        max-width: 100%;
+        max-width: 100% !important;
     }
 
-    padding: 1.25rem 1.25rem;
+    padding: 1.25rem 1.25rem !important;
 }
 
 .header-container {
-    display: flex;
-    flex-direction: row;
+    display: flex !important;
+    flex-direction: row !important;
 }
 
 .total-score-wrapper {
-    margin-left: auto;
-    float: right;
-    display: flex;
-    align-items: center;
-    flex-direction: row;
-    margin-right: 10px;
+    margin-left: auto !important;
+    float: right !important;
+    display: flex !important;
+    align-items: center !important;
+    flex-direction: row !important;
+    margin-right: 10px !important;
 }
 
 .btn-total-score {
-    color: #337ab7;
-    border-radius: 6px;
-    border: none;
+    color: #337ab7 !important;
+    border-radius: 6px !important;
+    border: none !important;
 }
 
 .span-total-score {
-    margin-right: 5px;
-    font-weight: bold;
+    margin-right: 5px !important;
+    font-weight: bold !important;
 }
 
 /* jhipster-needle-scss-add-main JHipster will add new css style */
