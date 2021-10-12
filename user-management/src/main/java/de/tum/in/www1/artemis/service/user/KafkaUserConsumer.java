@@ -72,14 +72,14 @@ public class KafkaUserConsumer {
                                 User user = userRepository.getUserByLoginElseThrow(data.getUserLogin());
                                 log.debug("User {}", user);
                                 log.info("User {}", user);
-                                userService.addUserToGroup(user, data.getGroupName());
+                                userService.addUserToGroup(user, data.getGroupName(), data.getRole());
                             }
                             case TOPIC_REMOVE_USER_FROM_GROUP -> {
                                 KafkaUserGroupDTO data = readUserGroupValue(record.value());
                                 User user = userRepository.getUserByLoginElseThrow(data.getUserLogin());
                                 log.debug("User {}", user);
                                 log.info("User {}", user);
-                                userService.removeUserFromGroup(user, data.getGroupName());
+                                userService.removeUserFromGroup(user, data.getGroupName(), data.getRole());
                             }
                         }
 
