@@ -27,7 +27,6 @@ plugins {
     id "com.github.andygoossens.gradle-modernizer-plugin" version "1.6.0"
     id "org.openapi.generator"
     id "io.spring.nohttp"
-//    id "org.liquibase.gradle"
     //jhipster-needle-gradle-plugins - JHipster will add additional gradle plugins here
 }
 
@@ -72,16 +71,62 @@ sourceSets {
             include 'Constants.*'
 
             srcDir file("../src/main/java/de/tum/in/www1/artemis/service")
+            include 'BuildLogEntryService.*'
             include 'FilePathService.*'
             include 'FileService.*'
             include 'ScoreService.*'
+            include 'UrlService.*'
+            include 'ZipFileService.*'
+            include 'ResourceLoaderService.*'
 
             srcDir file("../src/main/java/de/tum/in/www1/artemis/service/connectors")
+            include 'AbstractContinuousIntegrationService.*'
+            include 'AbstractVersionControlService.*'
+            include 'BitbucketBambooUpdateService.*'
             include 'ConnectorHealth.*'
-            include 'VcsUserManagementService.*'
+            include 'GitService.*'
             include 'CIUserManagementService.*'
+            include 'CIPermission.*'
+            include 'ContinuousIntegrationService.*'
+            include 'ContinuousIntegrationUpdateService.*'
+            include 'JenkinsUserManagementService.*'
+            include 'VcsUserManagementService.*'
+            include 'VersionControlService.*'
+            include 'VersionControlRepositoryPermission.*'
+            include 'bamboo/BambooAuthorizationInterceptor.*'
+            include 'bamboo/BambooService.*'
+            include 'bamboo/BambooBuildPlanService.*'
+            include 'bamboo/dto/*.*'
+            include 'bitbucket/*.*'
+            include 'bitbucket/dto/*.*'
             include 'jira/JiraAuthenticationProvider.*'
             include 'jira/dto/JiraUserDTO.*'
+            include 'jenkins/JenkinsAuthorizationInterceptor.*'
+            include 'jenkins/JenkinsUserManagementService.*'
+            include 'jenkins/JenkinsInternalUrlService.*'
+            include 'jenkins/JenkinsBuildPlanService.*'
+            include 'jenkins/JenkinsBuildPlanUtils.*'
+            include 'jenkins/JenkinsBuildLogParseUtils.*'
+            include 'jenkins/JenkinsEndpoints.*'
+            include 'jenkins/JenkinsService.*'
+            include 'jenkins/JenkinsXmlConfigBuilder.*'
+            include 'jenkins/JenkinsBuildPlanCreator.*'
+            include 'jenkins/dto/CommitDTO.*'
+            include 'jenkins/dto/TestsuiteDTO.*'
+            include 'jenkins/dto/TestCaseDetailMessageDTO.*'
+            include 'jenkins/dto/JenkinsUserDTO.*'
+            include 'jenkins/dto/TestCaseDTO.*'
+            include 'jenkins/dto/TestResultsDTO.*'
+            include 'jenkins/jobs/JenkinsJobPermissionsService.*'
+            include 'jenkins/jobs/JenkinsJobPermission.*'
+            include 'jenkins/jobs/JenkinsJobPermissionsUtils.*'
+            include 'jenkins/jobs/JenkinsJobService.*'
+            include 'gitlab/GitLabUserManagementService.*'
+            include 'gitlab/GitLabException.*'
+            include 'gitlab/GitLabUserDoesNotExistException.*'
+            include 'gitlab/GitLabAuthorizationInterceptor.*'
+            include 'gitlab/GitLabService.*'
+            include 'gitlab/dto/*.*'
 
             srcDir '../src/main/java/de/tum/in/www1/artemis/web/rest/errors'
             include 'StudentsAlreadyAssignedException.*'
@@ -94,6 +139,16 @@ sourceSets {
 
             srcDir file("../src/main/java/de/tum/in/www1/artemis/config/audit")
             include 'AuditEventConverter.*'
+
+            srcDir file("../src/main/java/de/tum/in/www1/artemis/exception")
+            include 'ContinuousIntegrationException.*'
+            include 'FilePathParsingException.*'
+            include 'GroupAlreadyExistsException.*'
+            include 'JenkinsException.*'
+            include 'BitbucketException.*'
+            include 'GitException.*'
+            include 'BambooException.*'
+            include 'ContinuousIntegrationBuildPlanException.*'
         }
         resources {
             srcDir '../src/main/resources'
@@ -103,7 +158,6 @@ sourceSets {
     main {
         java {
             srcDir '../src/main/java/de/tum/in/www1/artemis/domain'
-            srcDir '../src/main/java/de/tum/in/www1/artemis/exception'
             srcDir '../src/main/java/de/tum/in/www1/artemis/repository'
             srcDir '../src/main/java/de/tum/in/www1/artemis/web/rest/dto'
             srcDir '../src/main/java/de/tum/in/www1/artemis/service/dto'
@@ -237,6 +291,8 @@ repositories {
 }
 
 dependencies {
+    implementation "com.offbytwo.jenkins:jenkins-client:0.3.8"
+    implementation "org.gitlab4j:gitlab4j-api:4.18.0"
     implementation files("../libs/jplag-3.0.0.jar")
 
     // https://mvnrepository.com/artifact/org.eclipse.jgit/org.eclipse.jgit
@@ -251,6 +307,7 @@ dependencies {
     implementation "com.thoughtworks.qdox:qdox:2.0.0"
     implementation "io.sentry:sentry-spring-boot-starter:5.1.2"
     implementation "io.sentry:sentry-logback:5.2.0"
+    implementation "org.jsoup:jsoup:1.14.3"
     implementation "commons-codec:commons-codec:1.15"   // needed for spring security saml2
 
     implementation "org.springdoc:springdoc-openapi-ui:1.5.10"
@@ -271,7 +328,7 @@ dependencies {
     implementation "com.hazelcast:hazelcast-spring:${hazelcast_version}"
     implementation "com.hazelcast:hazelcast-hibernate53:2.2.1"
     implementation "javax.cache:cache-api:1.1.1"
-    implementation "org.hibernate:hibernate-core"
+    implementation "org.hibernate:hibernate-core:${hibernate_version}"
     implementation "com.zaxxer:HikariCP:5.0.0"
     implementation "org.apache.commons:commons-text:1.9"
     implementation 'org.apache.commons:commons-math3:3.6.1'
@@ -279,7 +336,7 @@ dependencies {
     implementation "org.apache.commons:commons-lang3"
     implementation "org.hibernate:hibernate-jcache:${hibernate_version}"
     implementation "org.hibernate:hibernate-entitymanager:${hibernate_version}"
-    implementation "org.liquibase:liquibase-core:4.4.3"
+    implementation "org.liquibase:liquibase-core:4.5.0"
     implementation "org.springframework.boot:spring-boot-starter-validation:${spring_boot_version}"
     implementation "org.springframework.boot:spring-boot-loader-tools:${spring_boot_version}"
     implementation "org.springframework.boot:spring-boot-starter-mail:${spring_boot_version}"
@@ -304,6 +361,7 @@ dependencies {
     implementation "org.springframework.ldap:spring-ldap-core:2.3.4.RELEASE"
     implementation "org.springframework.data:spring-data-ldap:2.5.5"
 
+    implementation "org.springframework:spring-messaging:5.3.10"
     implementation "org.springframework.cloud:spring-cloud-starter"
     implementation "org.springframework.cloud:spring-cloud-starter-netflix-hystrix"
     implementation "org.springframework.retry:spring-retry"
@@ -462,8 +520,8 @@ tasks.named("dependencyUpdates").configure {
 // Available commands:
 //
 // 1) Build production:                             ./gradlew -Pprod -Pwar clean bootWar
-// 2) Execute tests with coverage report:           ./gradlew executeTests jacocoTestReport -x npm -x webapp
-// 2a) Execute tests without coverage report:       ./gradlew executeTests -x npm -x webapp
+// 2) Execute tests with coverage report:           ./gradlew executeTests jacocoTestReport
+// 2a) Execute tests without coverage report:       ./gradlew executeTests
 // 2b) Run a single test:                           ./gradlew test --tests ExamIntegrationTest or ./gradlew test --tests ExamIntegrationTest.testGetExamScore
 // 3) Check Java code format:                       ./gradlew spotlessCheck -x npm -x webapp
 // 4) Apply Java code formatter:                    ./gradlew spotlessApply -x npm -x webapp
