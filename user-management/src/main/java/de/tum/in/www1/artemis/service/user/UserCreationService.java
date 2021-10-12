@@ -1,28 +1,7 @@
 package de.tum.in.www1.artemis.service.user;
 
-import de.tum.in.www1.artemis.config.Constants;
-import de.tum.in.www1.artemis.domain.Authority;
-import de.tum.in.www1.artemis.domain.Organization;
-import de.tum.in.www1.artemis.domain.User;
-import de.tum.in.www1.artemis.repository.AuthorityRepository;
-import de.tum.in.www1.artemis.repository.CourseRepository;
-import de.tum.in.www1.artemis.repository.OrganizationRepository;
-import de.tum.in.www1.artemis.repository.UserRepository;
-import de.tum.in.www1.artemis.security.SecurityUtils;
-//import de.tum.in.www1.artemis.service.connectors.CIUserManagementService;
-//import de.tum.in.www1.artemis.service.connectors.VcsUserManagementService;
-import de.tum.in.www1.artemis.web.rest.vm.ManagedUserVM;
-// import io.github.jhipster.security.RandomUtil;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.cache.CacheManager;
-import org.springframework.dao.InvalidDataAccessApiUsageException;
-import org.springframework.lang.Nullable;
-import org.springframework.stereotype.Service;
-import tech.jhipster.security.RandomUtil;
+import static de.tum.in.www1.artemis.security.Role.*;
 
-import javax.validation.constraints.NotNull;
 import java.time.Instant;
 import java.util.HashSet;
 import java.util.Optional;
@@ -30,7 +9,30 @@ import java.util.Set;
 import java.util.regex.PatternSyntaxException;
 import java.util.stream.Collectors;
 
-import static de.tum.in.www1.artemis.security.Role.*;
+import javax.validation.constraints.NotNull;
+
+import de.tum.in.www1.artemis.repository.AuthorityRepository;
+import de.tum.in.www1.artemis.repository.CourseRepository;
+import de.tum.in.www1.artemis.repository.OrganizationRepository;
+import de.tum.in.www1.artemis.repository.UserRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cache.CacheManager;
+import org.springframework.dao.InvalidDataAccessApiUsageException;
+import org.springframework.lang.Nullable;
+import org.springframework.stereotype.Service;
+
+import de.tum.in.www1.artemis.config.Constants;
+import de.tum.in.www1.artemis.domain.Authority;
+import de.tum.in.www1.artemis.domain.Organization;
+import de.tum.in.www1.artemis.domain.User;
+import de.tum.in.www1.artemis.repository.*;
+import de.tum.in.www1.artemis.security.SecurityUtils;
+import de.tum.in.www1.artemis.service.connectors.CIUserManagementService;
+import de.tum.in.www1.artemis.service.connectors.VcsUserManagementService;
+import de.tum.in.www1.artemis.web.rest.vm.ManagedUserVM;
+import tech.jhipster.security.RandomUtil;
 
 @Service
 public class UserCreationService {
@@ -62,23 +64,21 @@ public class UserCreationService {
 
     private final OrganizationRepository organizationRepository;
 
-    // private final Optional<VcsUserManagementService> optionalVcsUserManagementService;
-    //
-    // private final Optional<CIUserManagementService> optionalCIUserManagementService;
-    //
+    private final Optional<VcsUserManagementService> optionalVcsUserManagementService;
+
+    private final Optional<CIUserManagementService> optionalCIUserManagementService;
+
     private final CacheManager cacheManager;
 
-    //
     public UserCreationService(UserRepository userRepository, PasswordService passwordService, AuthorityRepository authorityRepository, CourseRepository courseRepository,
-                               // Optional<VcsUserManagementService> optionalVcsUserManagementService, Optional<CIUserManagementService> optionalCIUserManagementService,
-                               CacheManager cacheManager,
+                               Optional<VcsUserManagementService> optionalVcsUserManagementService, Optional<CIUserManagementService> optionalCIUserManagementService, CacheManager cacheManager,
                                OrganizationRepository organizationRepository) {
         this.userRepository = userRepository;
         this.passwordService = passwordService;
         this.authorityRepository = authorityRepository;
         this.courseRepository = courseRepository;
-        // this.optionalVcsUserManagementService = optionalVcsUserManagementService;
-        // this.optionalCIUserManagementService = optionalCIUserManagementService;
+        this.optionalVcsUserManagementService = optionalVcsUserManagementService;
+        this.optionalCIUserManagementService = optionalCIUserManagementService;
         this.cacheManager = cacheManager;
         this.organizationRepository = organizationRepository;
     }
@@ -130,7 +130,8 @@ public class UserCreationService {
         try {
             Set<Organization> matchingOrganizations = organizationRepository.getAllMatchingOrganizationsByUserEmail(email);
             newUser.setOrganizations(matchingOrganizations);
-        } catch (InvalidDataAccessApiUsageException | PatternSyntaxException pse) {
+        }
+        catch (InvalidDataAccessApiUsageException | PatternSyntaxException pse) {
             log.warn("Could not retrieve matching organizations from pattern: {}", pse.getMessage());
         }
         saveUser(newUser);
@@ -154,7 +155,8 @@ public class UserCreationService {
         user.setImageUrl(userDTO.getImageUrl());
         if (userDTO.getLangKey() == null) {
             user.setLangKey(Constants.DEFAULT_LANGUAGE); // default language
-        } else {
+        }
+        else {
             user.setLangKey(userDTO.getLangKey());
         }
         if (userDTO.getAuthorities() != null) {
@@ -172,7 +174,8 @@ public class UserCreationService {
         try {
             Set<Organization> matchingOrganizations = organizationRepository.getAllMatchingOrganizationsByUserEmail(userDTO.getEmail());
             user.setOrganizations(matchingOrganizations);
-        } catch (InvalidDataAccessApiUsageException | PatternSyntaxException pse) {
+        }
+        catch (InvalidDataAccessApiUsageException | PatternSyntaxException pse) {
             log.warn("Could not retrieve matching organizations from pattern: {}", pse.getMessage());
         }
         user.setGroups(userDTO.getGroups());
@@ -180,8 +183,8 @@ public class UserCreationService {
         user.setRegistrationNumber(userDTO.getVisibleRegistrationNumber());
         saveUser(user);
 
-        // optionalVcsUserManagementService.ifPresent(vcsUserManagementService -> vcsUserManagementService.createVcsUser(user));
-        // optionalCIUserManagementService.ifPresent(ciUserManagementService -> ciUserManagementService.createUser(user));
+        optionalVcsUserManagementService.ifPresent(vcsUserManagementService -> vcsUserManagementService.createVcsUser(user));
+        optionalCIUserManagementService.ifPresent(ciUserManagementService -> ciUserManagementService.createUser(user));
 
         addUserToGroupsInternal(user, userDTO.getGroups());
 
@@ -208,8 +211,8 @@ public class UserCreationService {
             user.setImageUrl(imageUrl);
             saveUser(user);
             log.info("Changed Information for User: {}", user);
-//     optionalVcsUserManagementService.ifPresent(vcsUserManagementService -> vcsUserManagementService.updateVcsUser(user.getLogin(), user, null, null, true));
-//     optionalCIUserManagementService.ifPresent(ciUserManagementService -> ciUserManagementService.updateUser(user));
+            optionalVcsUserManagementService.ifPresent(vcsUserManagementService -> vcsUserManagementService.updateVcsUser(user.getLogin(), user, null, null, true));
+            optionalCIUserManagementService.ifPresent(ciUserManagementService -> ciUserManagementService.updateUser(user));
         });
     }
 

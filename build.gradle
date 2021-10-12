@@ -258,6 +258,7 @@ dependencies {
     implementation "org.apache.maven:maven-model:3.8.2"
     implementation "org.apache.pdfbox:pdfbox:2.0.24"
     implementation "com.google.protobuf:protobuf-java:3.18.0"
+    implementation "org.apache.kafka:kafka-clients"
 
     annotationProcessor "org.hibernate:hibernate-jpamodelgen:${hibernate_version}"
     annotationProcessor ("org.glassfish.jaxb:jaxb-runtime:${jaxb_runtime_version}") {

@@ -48,6 +48,8 @@ spring:
         show-sql: false
     liquibase:
         contexts: dev
+#        url: jdbc:mysql://localhost:3306/Artemis?createDatabaseIfNotExist=true&allowPublicKeyRetrieval=true&useUnicode=true&characterEncoding=utf8&useSSL=false&useLegacyDatetimeCode=false&serverTimezone=UTC
+#        user: root
     mail:
         host: localhost
         port: 25

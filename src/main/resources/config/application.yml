@@ -214,7 +214,7 @@ jhipster:
     mail:
         from: artemis@localhost
     registry:
-        password: AN-ADMIN-PASSWORD-THAT-MUST-BE-CHANGED (FROM REGISTRY CONFIG)
+        password: admin
     cache: # Cache configuration
         hazelcast: # Hazelcast distributed cache
             time-to-live-seconds: 3600
@@ -223,7 +223,7 @@ jhipster:
 # Eureka configuration
 eureka:
     client:
-        enabled: false
+        enabled: true
         service-url:
             defaultZone: http://admin:${jhipster.registry.password}@localhost:8761/eureka/
         healthcheck:
@@ -247,3 +247,14 @@ eureka:
             git-version: ${git.commit.id.describe:}
             git-commit: ${git.commit.id.abbrev:}
             git-branch: ${git.branch:}
+
+kafka:
+    bootstrap-servers: localhost:9092
+    consumer:
+        key.deserializer: org.apache.kafka.common.serialization.StringDeserializer
+        value.deserializer: org.apache.kafka.common.serialization.StringDeserializer
+        group.id: artemis
+        auto.offset.reset: earliest
+    producer:
+        key.serializer: org.apache.kafka.common.serialization.StringSerializer
+        value.serializer: org.apache.kafka.common.serialization.StringSerializer

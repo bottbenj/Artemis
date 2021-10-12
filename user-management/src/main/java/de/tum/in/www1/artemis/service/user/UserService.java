@@ -1,26 +1,16 @@
 package de.tum.in.www1.artemis.service.user;
 
-import de.tum.in.www1.artemis.domain.Authority;
-import de.tum.in.www1.artemis.domain.GuidedTourSetting;
-import de.tum.in.www1.artemis.domain.User;
-// import de.tum.in.www1.artemis.exception.*;
+import static de.tum.in.www1.artemis.domain.Authority.ADMIN_AUTHORITY;
+import static de.tum.in.www1.artemis.security.Role.*;
+
+import java.time.Instant;
+import java.util.*;
+import java.util.stream.Collectors;
+
 import de.tum.in.www1.artemis.repository.AuthorityRepository;
 import de.tum.in.www1.artemis.repository.GuidedTourSettingsRepository;
 import de.tum.in.www1.artemis.repository.StudentScoreRepository;
 import de.tum.in.www1.artemis.repository.UserRepository;
-import de.tum.in.www1.artemis.security.ArtemisAuthenticationProvider;
-import de.tum.in.www1.artemis.security.SecurityUtils;
-//import de.tum.in.www1.artemis.service.connectors.CIUserManagementService;
-//import de.tum.in.www1.artemis.service.connectors.VcsUserManagementService;
-//import de.tum.in.www1.artemis.service.connectors.jira.JiraAuthenticationProvider;
-import de.tum.in.www1.artemis.service.dto.UserDTO;
-//import de.tum.in.www1.artemis.service.ldap.LdapUserDto;
-//import de.tum.in.www1.artemis.service.ldap.LdapUserService;
-//import de.tum.in.www1.artemis.service.messaging.InstanceMessageSendService;
-import de.tum.in.www1.artemis.web.rest.errors.EmailAlreadyUsedException;
-import de.tum.in.www1.artemis.web.rest.errors.InvalidPasswordException;
-import de.tum.in.www1.artemis.web.rest.vm.ManagedUserVM;
-// import io.github.jhipster.security.RandomUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -30,18 +20,26 @@ import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
+
+import de.tum.in.www1.artemis.domain.Authority;
+import de.tum.in.www1.artemis.domain.GuidedTourSetting;
+import de.tum.in.www1.artemis.domain.User;
+import de.tum.in.www1.artemis.exception.*;
+import de.tum.in.www1.artemis.repository.*;
+import de.tum.in.www1.artemis.security.ArtemisAuthenticationProvider;
+import de.tum.in.www1.artemis.security.Role;
+import de.tum.in.www1.artemis.security.SecurityUtils;
+import de.tum.in.www1.artemis.service.connectors.CIUserManagementService;
+import de.tum.in.www1.artemis.service.connectors.VcsUserManagementService;
+import de.tum.in.www1.artemis.service.connectors.jira.JiraAuthenticationProvider;
+import de.tum.in.www1.artemis.service.dto.UserDTO;
+import de.tum.in.www1.artemis.service.ldap.LdapUserDto;
+import de.tum.in.www1.artemis.service.ldap.LdapUserService;
+import de.tum.in.www1.artemis.service.messaging.InstanceMessageSendService;
+import de.tum.in.www1.artemis.web.rest.errors.EmailAlreadyUsedException;
+import de.tum.in.www1.artemis.web.rest.errors.InvalidPasswordException;
+import de.tum.in.www1.artemis.web.rest.vm.ManagedUserVM;
 import tech.jhipster.security.RandomUtil;
-
-import java.time.Instant;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
-
-import static de.tum.in.www1.artemis.domain.Authority.ADMIN_AUTHORITY;
-import static de.tum.in.www1.artemis.security.Role.ADMIN;
-import static de.tum.in.www1.artemis.security.Role.STUDENT;
 
 /**
  * Service class for managing users.
@@ -50,56 +48,59 @@ import static de.tum.in.www1.artemis.security.Role.STUDENT;
 public class UserService {
 
     private final Logger log = LoggerFactory.getLogger(UserService.class);
-    private final UserRepository userRepository;
-    private final PasswordService passwordService;
-    private final StudentScoreRepository studentScoreRepository;
 
-    private final UserCreationService userCreationService;
-    private final CacheManager cacheManager;
-    private final AuthorityRepository authorityRepository;
-
-    private final AuthorityService authorityService;
-
-    //// private final Optional<LdapUserService> ldapUserService;
-    //
-    // private final Optional<VcsUserManagementService> optionalVcsUserManagementService;
-    //
-    // private final Optional<CIUserManagementService> optionalCIUserManagementService;
-    //
-    private final ArtemisAuthenticationProvider artemisAuthenticationProvider;
-    private final GuidedTourSettingsRepository guidedTourSettingsRepository;
-    //        private final InstanceMessageSendService instanceMessageSendService;
     @Value("${artemis.user-management.use-external}")
     private Boolean useExternalUserManagement;
+
     @Value("${artemis.user-management.internal-admin.username:#{null}}")
     private Optional<String> artemisInternalAdminUsername;
+
     @Value("${artemis.user-management.internal-admin.password:#{null}}")
     private Optional<String> artemisInternalAdminPassword;
 
-    public UserService(
-        UserCreationService userCreationService, UserRepository userRepository, AuthorityService authorityService, AuthorityRepository authorityRepository,
-        CacheManager cacheManager,
-        //// Optional<LdapUserService> ldapUserService,
-        GuidedTourSettingsRepository guidedTourSettingsRepository,
-        PasswordService passwordService,
-        // Optional<VcsUserManagementService> optionalVcsUserManagementService, Optional<CIUserManagementService> optionalCIUserManagementService,
-        ArtemisAuthenticationProvider artemisAuthenticationProvider,
-        StudentScoreRepository studentScoreRepository
-//        , InstanceMessageSendService instanceMessageSendService
-    ) {
+    private final UserCreationService userCreationService;
+
+    private final UserRepository userRepository;
+
+    private final PasswordService passwordService;
+
+    private final AuthorityService authorityService;
+
+    private final Optional<LdapUserService> ldapUserService;
+
+    private final Optional<VcsUserManagementService> optionalVcsUserManagementService;
+
+    private final Optional<CIUserManagementService> optionalCIUserManagementService;
+
+    private final ArtemisAuthenticationProvider artemisAuthenticationProvider;
+
+    private final StudentScoreRepository studentScoreRepository;
+
+    private final CacheManager cacheManager;
+
+    private final AuthorityRepository authorityRepository;
+
+    private final GuidedTourSettingsRepository guidedTourSettingsRepository;
+
+    private final InstanceMessageSendService instanceMessageSendService;
+
+    public UserService(UserCreationService userCreationService, UserRepository userRepository, AuthorityService authorityService, AuthorityRepository authorityRepository,
+                       CacheManager cacheManager, Optional<LdapUserService> ldapUserService, GuidedTourSettingsRepository guidedTourSettingsRepository, PasswordService passwordService,
+                       Optional<VcsUserManagementService> optionalVcsUserManagementService, Optional<CIUserManagementService> optionalCIUserManagementService,
+                       ArtemisAuthenticationProvider artemisAuthenticationProvider, StudentScoreRepository studentScoreRepository, InstanceMessageSendService instanceMessageSendService) {
         this.userCreationService = userCreationService;
         this.userRepository = userRepository;
         this.authorityService = authorityService;
         this.authorityRepository = authorityRepository;
         this.cacheManager = cacheManager;
-        //// this.ldapUserService = ldapUserService;
+        this.ldapUserService = ldapUserService;
         this.guidedTourSettingsRepository = guidedTourSettingsRepository;
         this.passwordService = passwordService;
-        // this.optionalVcsUserManagementService = optionalVcsUserManagementService;
-        // this.optionalCIUserManagementService = optionalCIUserManagementService;
+        this.optionalVcsUserManagementService = optionalVcsUserManagementService;
+        this.optionalCIUserManagementService = optionalCIUserManagementService;
         this.artemisAuthenticationProvider = artemisAuthenticationProvider;
         this.studentScoreRepository = studentScoreRepository;
-//        this.instanceMessageSendService = instanceMessageSendService;
+        this.instanceMessageSendService = instanceMessageSendService;
     }
 
     /**
@@ -120,7 +121,8 @@ public class UserService {
                     existingInternalAdmin.get().setAuthorities(new HashSet<>(Set.of(ADMIN_AUTHORITY, new Authority(STUDENT.getAuthority()))));
                     saveUser(existingInternalAdmin.get());
                     updateUserInConnectorsAndAuthProvider(existingInternalAdmin.get(), existingInternalAdmin.get().getLogin(), existingInternalAdmin.get().getGroups());
-                } else {
+                }
+                else {
                     log.info("Create internal admin user {}", artemisInternalAdminUsername.get());
                     ManagedUserVM userDto = new ManagedUserVM();
                     userDto.setLogin(artemisInternalAdminUsername.get());
@@ -138,7 +140,8 @@ public class UserService {
                     userCreationService.createUser(userDto);
                 }
             }
-        } catch (Exception ex) {
+        }
+        catch (Exception ex) {
             log.error("An error occurred after application startup when creating or updating the admin user or in the LDAP search", ex);
         }
     }
@@ -164,8 +167,8 @@ public class UserService {
      */
     public void activateUser(User user) {
         // Cancel automatic removal of the user since it's activated.
-//     instanceMessageSendService.sendCancelRemoveNonActivatedUserSchedule(user.getId());
-//     optionalVcsUserManagementService.ifPresent(vcsUserManagementService -> vcsUserManagementService.activateUser(user.getLogin()));
+        instanceMessageSendService.sendCancelRemoveNonActivatedUserSchedule(user.getId());
+        optionalVcsUserManagementService.ifPresent(vcsUserManagementService -> vcsUserManagementService.activateUser(user.getLogin()));
         // activate given user for the registration key.
         userCreationService.activateUser(user);
     }
@@ -184,8 +187,8 @@ public class UserService {
             user.setResetKey(null);
             user.setResetDate(null);
             saveUser(user);
-//     optionalVcsUserManagementService.ifPresent(vcsUserManagementService -> vcsUserManagementService.updateVcsUser(user.getLogin(), user, null, null, true));
-//     optionalCIUserManagementService.ifPresent(ciUserManagementService -> ciUserManagementService.updateUser(user));
+            optionalVcsUserManagementService.ifPresent(vcsUserManagementService -> vcsUserManagementService.updateVcsUser(user.getLogin(), user, null, null, true));
+            optionalCIUserManagementService.ifPresent(ciUserManagementService -> ciUserManagementService.updateUser(user));
             return user;
         });
     }
@@ -262,27 +265,27 @@ public class UserService {
 
             // The email is different which means that the user wants to re-register the same
             // account with a different email. Block this.
-            throw new de.tum.in.www1.artemis.exception.AccountRegistrationBlockedException(newUser.getEmail());
+            throw new AccountRegistrationBlockedException(newUser.getEmail());
         }
 
         // we need to save first so that the user can be found in the database in the subsequent method
         User savedNonActivatedUser = saveUser(newUser);
 
         // Create an account on the VCS. If it fails, abort registration.
-//     optionalVcsUserManagementService.ifPresent(vcsUserManagementService -> {
-//     try {
-//     vcsUserManagementService.createVcsUser(savedNonActivatedUser);
-//     vcsUserManagementService.deactivateUser(savedNonActivatedUser.getLogin());
-//     }
-//     catch (de.tum.in.www1.artemis.exception.VersionControlException e) {
-//     log.error("An error occurred while registering GitLab user " + savedNonActivatedUser.getLogin() + ":", e);
-//     deleteUser(savedNonActivatedUser);
-//     throw e;
-//     }
-//     });
+        optionalVcsUserManagementService.ifPresent(vcsUserManagementService -> {
+            try {
+                vcsUserManagementService.createVcsUser(savedNonActivatedUser);
+                vcsUserManagementService.deactivateUser(savedNonActivatedUser.getLogin());
+            }
+            catch (VersionControlException e) {
+                log.error("An error occurred while registering GitLab user " + savedNonActivatedUser.getLogin() + ":", e);
+                deleteUser(savedNonActivatedUser);
+                throw e;
+            }
+        });
 
         // Automatically remove the user if it wasn't activated after a certain amount of time.
-//     instanceMessageSendService.sendRemoveNonActivatedUserSchedule(savedNonActivatedUser.getId());
+        instanceMessageSendService.sendRemoveNonActivatedUserSchedule(savedNonActivatedUser.getId());
 
         log.debug("Created Information for User: {}", newUser);
         return newUser;
@@ -292,14 +295,14 @@ public class UserService {
      * Handles the case where a user registers a new account but a user with the same login already
      * exists in Artemis.
      *
-     * @param newUser      the new user
+     * @param newUser the new user
      * @param existingUser the existing user
      * @return the existing non-activated user in Artemis.
      */
     private User handleRegisterUserWithSameLoginAsExistingUser(User newUser, User existingUser) {
         // An account with the same login is already activated.
         if (existingUser.getActivated()) {
-            throw new de.tum.in.www1.artemis.exception.UsernameAlreadyUsedException();
+            throw new UsernameAlreadyUsedException();
         }
 
         // The user has the same login and email, but the account is not activated.
@@ -309,17 +312,17 @@ public class UserService {
             // Update the existing user and VCS
             newUser.setId(existingUser.getId());
             User updatedExistingUser = userRepository.save(newUser);
-//            optionalVcsUserManagementService
-//                .ifPresent(vcsUserManagementService -> vcsUserManagementService.updateVcsUser(existingUser.getLogin(), updatedExistingUser, Set.of(), Set.of(), true));
+            optionalVcsUserManagementService
+                .ifPresent(vcsUserManagementService -> vcsUserManagementService.updateVcsUser(existingUser.getLogin(), updatedExistingUser, Set.of(), Set.of(), true));
 
             // Post-pone the cleaning up of the account
-//            instanceMessageSendService.sendRemoveNonActivatedUserSchedule(updatedExistingUser.getId());
-//            return updatedExistingUser;
+            instanceMessageSendService.sendRemoveNonActivatedUserSchedule(updatedExistingUser.getId());
+            return updatedExistingUser;
         }
 
         // The email is different which means that the user wants to re-register the same
         // account with a different email. Block this.
-        throw new de.tum.in.www1.artemis.exception.AccountRegistrationBlockedException(existingUser.getEmail());
+        throw new AccountRegistrationBlockedException(existingUser.getEmail());
     }
 
     /**
@@ -334,34 +337,34 @@ public class UserService {
         if (!StringUtils.hasText(registrationNumber)) {
             return Optional.empty();
         }
-        // if (ldapUserService.isPresent()) {
-        // Optional<LdapUserDto> ldapUserOptional = ldapUserService.get().findByRegistrationNumber(registrationNumber);
-        // if (ldapUserOptional.isPresent()) {
-        // LdapUserDto ldapUser = ldapUserOptional.get();
-        // log.info("Ldap User {} has registration number: {}", ldapUser.getUsername(), ldapUser.getRegistrationNumber());
-        //
-//      handle edge case, the user already exists in Artemis, but for some reason does not have a registration number or it is wrong
-//     if (StringUtils.hasText(ldapUser.getUsername())) {
-//     var existingUser = userRepository.findOneByLogin(ldapUser.getUsername());
-//     if (existingUser.isPresent()) {
-        // existingUser.get().setRegistrationNumber(ldapUser.getRegistrationNumber());
-        // saveUser(existingUser.get());
-        // return existingUser;
-        // }
-        // }
-        //
-        // Use empty password, so that we don't store the credentials of Jira users in the Artemis DB
-//     User user = userCreationService.createInternalUser(ldapUser.getUsername(), "", null, ldapUser.getFirstName(), ldapUser.getLastName(), ldapUser.getEmail(),
-        // registrationNumber, null, "en");
-//     if (useExternalUserManagement) {
-//     artemisAuthenticationProvider.createUserInExternalUserManagement(user);
-//     }
-//     return Optional.of(user);
-//     }
-//     else {
-//     log.warn("Ldap User with registration number {} not found", registrationNumber);
-//     }
-//     }
+        if (ldapUserService.isPresent()) {
+            Optional<LdapUserDto> ldapUserOptional = ldapUserService.get().findByRegistrationNumber(registrationNumber);
+            if (ldapUserOptional.isPresent()) {
+                LdapUserDto ldapUser = ldapUserOptional.get();
+                log.info("Ldap User {} has registration number: {}", ldapUser.getUsername(), ldapUser.getRegistrationNumber());
+
+                // handle edge case, the user already exists in Artemis, but for some reason does not have a registration number or it is wrong
+                if (StringUtils.hasText(ldapUser.getUsername())) {
+                    var existingUser = userRepository.findOneByLogin(ldapUser.getUsername());
+                    if (existingUser.isPresent()) {
+                        existingUser.get().setRegistrationNumber(ldapUser.getRegistrationNumber());
+                        saveUser(existingUser.get());
+                        return existingUser;
+                    }
+                }
+
+                // Use empty password, so that we don't store the credentials of Jira users in the Artemis DB
+                User user = userCreationService.createInternalUser(ldapUser.getUsername(), "", null, ldapUser.getFirstName(), ldapUser.getLastName(), ldapUser.getEmail(),
+                    registrationNumber, null, "en");
+                if (useExternalUserManagement) {
+                    artemisAuthenticationProvider.createUserInExternalUserManagement(user);
+                }
+                return Optional.of(user);
+            }
+            else {
+                log.warn("Ldap User with registration number {} not found", registrationNumber);
+            }
+        }
         return Optional.empty();
     }
 
@@ -377,13 +380,14 @@ public class UserService {
         final var updatedGroups = user.getGroups();
         final var removedGroups = oldGroups.stream().filter(group -> !updatedGroups.contains(group)).collect(Collectors.toSet());
         final var addedGroups = updatedGroups.stream().filter(group -> !oldGroups.contains(group)).collect(Collectors.toSet());
-//     optionalVcsUserManagementService.ifPresent(vcsUserManagementService -> vcsUserManagementService.updateVcsUser(oldUserLogin, user, removedGroups, addedGroups, true));
-//     optionalCIUserManagementService.ifPresent(ciUserManagementService -> ciUserManagementService.updateUserAndGroups(oldUserLogin, user, addedGroups, removedGroups));
+        optionalVcsUserManagementService.ifPresent(vcsUserManagementService -> vcsUserManagementService.updateVcsUser(oldUserLogin, user, removedGroups, addedGroups, true));
+        optionalCIUserManagementService.ifPresent(ciUserManagementService -> ciUserManagementService.updateUserAndGroups(oldUserLogin, user, addedGroups, removedGroups));
 
         removedGroups.forEach(group -> artemisAuthenticationProvider.removeUserFromGroup(user, group)); // e.g. Jira
         try {
             addedGroups.forEach(group -> artemisAuthenticationProvider.addUserToGroup(user, group)); // e.g. JIRA
-        } catch (de.tum.in.www1.artemis.exception.ArtemisAuthenticationException e) {
+        }
+        catch (ArtemisAuthenticationException e) {
             // This might throw exceptions, for example if the group does not exist on the authentication service. We can safely ignore it
         }
     }
@@ -396,10 +400,10 @@ public class UserService {
     @Transactional // ok because entities are deleted
     public void deleteUser(String login) {
         // Delete the user in the connected VCS if necessary (e.g. for GitLab)
-//     optionalVcsUserManagementService.ifPresent(userManagementService -> userManagementService.deleteVcsUser(login));
+        optionalVcsUserManagementService.ifPresent(userManagementService -> userManagementService.deleteVcsUser(login));
         // Delete the user in the local Artemis database
         userRepository.findOneByLogin(login).ifPresent(user -> {
-//     optionalCIUserManagementService.ifPresent(ciUserManagementService -> ciUserManagementService.deleteUser(user));
+            optionalCIUserManagementService.ifPresent(ciUserManagementService -> ciUserManagementService.deleteUser(user));
             deleteUser(user);
             log.warn("Deleted User: {}", user);
         });
@@ -441,8 +445,8 @@ public class UserService {
             String encryptedPassword = passwordService.encodePassword(newPassword);
             user.setPassword(encryptedPassword);
             saveUser(user);
-//     optionalVcsUserManagementService.ifPresent(vcsUserManagementService -> vcsUserManagementService.updateVcsUser(user.getLogin(), user, null, null, true));
-//     optionalCIUserManagementService.ifPresent(ciUserManagementService -> ciUserManagementService.updateUser(user));
+            optionalVcsUserManagementService.ifPresent(vcsUserManagementService -> vcsUserManagementService.updateVcsUser(user.getLogin(), user, null, null, true));
+            optionalCIUserManagementService.ifPresent(ciUserManagementService -> ciUserManagementService.updateUser(user));
 
             log.debug("Changed password for User: {}", user);
         });
@@ -520,17 +524,19 @@ public class UserService {
      *
      * @param user  the user
      * @param group the group
+     * @param role the role
      */
-    public void addUserToGroup(User user, String group) {
+    public void addUserToGroup(User user, String group, Role role) {
         addUserToGroupInternal(user, group); // internal Artemis database
         try {
-            artemisAuthenticationProvider.addUserToGroup(user, group); // e.g. JIRA
-        } catch (de.tum.in.www1.artemis.exception.ArtemisAuthenticationException e) {
+            artemisAuthenticationProvider.addUserToGroup(user, group);  // e.g. JIRA
+        }
+        catch (ArtemisAuthenticationException e) {
             // This might throw exceptions, for example if the group does not exist on the authentication service. We can safely ignore it
         }
-        // e.g. Gitlab
-//     optionalVcsUserManagementService.ifPresent(vcsUserManagementService -> vcsUserManagementService.updateVcsUser(user.getLogin(), user, Set.of(), Set.of(group), false));
-//     optionalCIUserManagementService.ifPresent(ciUserManagementService -> ciUserManagementService.addUserToGroups(user.getLogin(), Set.of(group)));
+        // e.g. Gitlab: TODO: include the role to distinguish more cases
+        optionalVcsUserManagementService.ifPresent(vcsUserManagementService -> vcsUserManagementService.updateVcsUser(user.getLogin(), user, Set.of(), Set.of(group), false));
+        optionalCIUserManagementService.ifPresent(ciUserManagementService -> ciUserManagementService.addUserToGroups(user.getLogin(), Set.of(group)));
     }
 
     /**
@@ -553,16 +559,17 @@ public class UserService {
      *
      * @param user  the user
      * @param group the group
+     * @param role the role
      */
-    public void removeUserFromGroup(User user, String group) {
+    public void removeUserFromGroup(User user, String group, Role role) {
         removeUserFromGroupInternal(user, group); // internal Artemis database
         artemisAuthenticationProvider.removeUserFromGroup(user, group); // e.g. JIRA
         // e.g. Gitlab
-//     optionalVcsUserManagementService.ifPresent(vcsUserManagementService -> vcsUserManagementService.updateVcsUser(user.getLogin(), user, Set.of(group), Set.of(), false));
-//     optionalCIUserManagementService.ifPresent(ciUserManagementService -> {
-//     ciUserManagementService.removeUserFromGroups(user.getLogin(), Set.of(group));
-//     ciUserManagementService.addUserToGroups(user.getLogin(), user.getGroups());
-//     });
+        optionalVcsUserManagementService.ifPresent(vcsUserManagementService -> vcsUserManagementService.updateVcsUser(user.getLogin(), user, Set.of(group), Set.of(), false));
+        optionalCIUserManagementService.ifPresent(ciUserManagementService -> {
+            ciUserManagementService.removeUserFromGroups(user.getLogin(), Set.of(group));
+            ciUserManagementService.addUserToGroups(user.getLogin(), user.getGroups());
+        });
     }
 
     /**

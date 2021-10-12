@@ -78,6 +78,10 @@ sourceSets {
 
             srcDir file("../src/main/java/de/tum/in/www1/artemis/service/connectors")
             include 'ConnectorHealth.*'
+            include 'VcsUserManagementService.*'
+            include 'CIUserManagementService.*'
+            include 'jira/JiraAuthenticationProvider.*'
+            include 'jira/dto/JiraUserDTO.*'
 
             srcDir '../src/main/java/de/tum/in/www1/artemis/web/rest/errors'
             include 'StudentsAlreadyAssignedException.*'
@@ -105,6 +109,7 @@ sourceSets {
             srcDir '../src/main/java/de/tum/in/www1/artemis/service/dto'
             srcDir '../src/main/java/de/tum/in/www1/artemis/service/util'
             srcDir '../src/main/java/de/tum/in/www1/artemis/service/listeners'
+            srcDir '../src/main/java/de/tum/in/www1/artemis/service/ldap'
             srcDir '../src/main/java/de/tum/in/www1/artemis/validation'
             srcDir external.java
         }
@@ -296,6 +301,9 @@ dependencies {
     implementation "javax.annotation:javax.annotation-api"
     implementation "io.dropwizard.metrics:metrics-core"
 
+    implementation "org.springframework.ldap:spring-ldap-core:2.3.4.RELEASE"
+    implementation "org.springframework.data:spring-data-ldap:2.5.5"
+
     implementation "org.springframework.cloud:spring-cloud-starter"
     implementation "org.springframework.cloud:spring-cloud-starter-netflix-hystrix"
     implementation "org.springframework.retry:spring-retry"
@@ -307,6 +315,8 @@ dependencies {
     implementation "org.springframework.security:spring-security-data:${spring_security_version}"
     implementation "org.springframework.security:spring-security-web:${spring_security_version}"
     implementation "org.springframework.security:spring-security-messaging:${spring_security_version}"
+    implementation "org.springframework.security:spring-security-ldap:${spring_security_version}"
+
     implementation "org.xmlbeam:xmlprojector:1.4.20"
     implementation "io.jsonwebtoken:jjwt-api:0.11.2"
     implementation "org.bouncycastle:bcprov-jdk15on:1.69"
