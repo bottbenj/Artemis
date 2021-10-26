@@ -37,6 +37,8 @@ public class AssessmentService {
 
     private final ExamDateService examDateService;
 
+    private final ExerciseDateService exerciseDateService;
+
     protected final SubmissionRepository submissionRepository;
 
     protected final GradingCriterionRepository gradingCriterionRepository;
@@ -51,8 +53,8 @@ public class AssessmentService {
 
     public AssessmentService(ComplaintResponseService complaintResponseService, ComplaintRepository complaintRepository, FeedbackRepository feedbackRepository,
             ResultRepository resultRepository, StudentParticipationRepository studentParticipationRepository, ResultService resultService, SubmissionService submissionService,
-            SubmissionRepository submissionRepository, ExamDateService examDateService, GradingCriterionRepository gradingCriterionRepository, UserRepository userRepository,
-            LtiService ltiService) {
+            SubmissionRepository submissionRepository, ExamDateService examDateService, ExerciseDateService exerciseDateService,
+            GradingCriterionRepository gradingCriterionRepository, UserRepository userRepository, LtiService ltiService) {
         this.complaintResponseService = complaintResponseService;
         this.complaintRepository = complaintRepository;
         this.feedbackRepository = feedbackRepository;
@@ -62,6 +64,7 @@ public class AssessmentService {
         this.submissionService = submissionService;
         this.submissionRepository = submissionRepository;
         this.examDateService = examDateService;
+        this.exerciseDateService = exerciseDateService;
         this.gradingCriterionRepository = gradingCriterionRepository;
         this.userRepository = userRepository;
         this.ltiService = ltiService;
@@ -109,7 +112,7 @@ public class AssessmentService {
             return resultRepository.findByIdWithEagerAssessor(savedResult.getId()).orElseThrow(); // to eagerly load assessor
         }
         else {
-            return resultRepository.submitResult(newResult, exercise);
+            return resultRepository.submitResult(newResult, exercise, exerciseDateService.getDueDate(newResult.getParticipation()));
         }
     }
 
@@ -246,7 +249,7 @@ public class AssessmentService {
                 .orElseThrow(() -> new EntityNotFoundException("No result for the given resultId could be found"));
         result.setRatedIfNotExceeded(exercise.getDueDate(), submissionDate);
         result.setCompletionDate(ZonedDateTime.now());
-        result = resultRepository.submitResult(result, exercise);
+        result = resultRepository.submitResult(result, exercise, exerciseDateService.getDueDate(result.getParticipation()));
         // Note: we always need to report the result (independent of the assessment due date) over LTI, otherwise it might never become visible in the external system
         ltiService.onNewResult((StudentParticipation) result.getParticipation());
         return result;

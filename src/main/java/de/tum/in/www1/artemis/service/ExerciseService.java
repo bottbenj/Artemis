@@ -66,6 +66,8 @@ public class ExerciseService {
 
     private final ProgrammingAssessmentService programmingAssessmentService;
 
+    private final ExerciseDateService exerciseDateService;
+
     private final TeamRepository teamRepository;
 
     private final ExamRepository examRepository;
@@ -129,7 +131,7 @@ public class ExerciseService {
             PlagiarismResultRepository plagiarismResultRepository, GradingCriterionRepository gradingCriterionRepository, FeedbackRepository feedbackRepository,
             ProgrammingAssessmentService programmingAssessmentService, TextAssessmentKnowledgeService textAssessmentKnowledgeService,
             ModelAssessmentKnowledgeService modelAssessmentKnowledgeService, TextExerciseRepository textExerciseRepository, ModelingExerciseRepository modelingExerciseRepository,
-            RatingService ratingService) {
+            RatingService ratingService, ExerciseDateService exerciseDateService) {
         this.exerciseRepository = exerciseRepository;
         this.resultRepository = resultRepository;
         this.examRepository = examRepository;
@@ -158,6 +160,7 @@ public class ExerciseService {
         this.gradingCriterionRepository = gradingCriterionRepository;
         this.feedbackRepository = feedbackRepository;
         this.programmingAssessmentService = programmingAssessmentService;
+        this.exerciseDateService = exerciseDateService;
         this.plagiarismResultRepository = plagiarismResultRepository;
         this.ratingService = ratingService;
         this.textAssessmentKnowledgeService = textAssessmentKnowledgeService;
@@ -867,7 +870,6 @@ public class ExerciseService {
      * @param deleteFeedbackAfterGradingInstructionUpdate  boolean flag that indicates whether the associated feedback should be deleted or not     *
      */
     public void reEvaluateExercise(Exercise exercise, boolean deleteFeedbackAfterGradingInstructionUpdate) {
-
         List<GradingCriterion> gradingCriteria = exercise.getGradingCriteria();
         // retrieve the feedback associated with the structured grading instructions
         List<Feedback> feedbackToBeUpdated = feedbackRepository.findFeedbackByExerciseGradingCriteria(gradingCriteria);
@@ -889,7 +891,7 @@ public class ExerciseService {
 
         List<Feedback> feedbackToBeDeleted = getFeedbackToBeDeletedAfterGradingInstructionUpdate(deleteFeedbackAfterGradingInstructionUpdate, gradingInstructions, exercise);
 
-        List<Result> results = resultRepository.findWithEagerSubmissionAndFeedbackByParticipationExerciseId(exercise.getId());
+        List<Result> results = resultRepository.findWithEagerSubmissionAndFeedbackAndParticipationByParticipationExerciseId(exercise.getId());
 
         // add example submission results that belong exercise
         if (!exercise.getExampleSubmissions().isEmpty()) {
@@ -909,7 +911,15 @@ public class ExerciseService {
             }
 
             if (!(exercise instanceof ProgrammingExercise)) {
-                resultRepository.submitResult(result, exercise);
+                final Optional<ZonedDateTime> dueDate;
+                if (result.getParticipation() == null) {
+                    // this is only the case for example submissions, due date does not matter then
+                    dueDate = Optional.empty();
+                }
+                else {
+                    dueDate = exerciseDateService.getDueDate(result.getParticipation());
+                }
+                resultRepository.submitResult(result, exercise, dueDate);
             }
             else {
                 double totalScore = programmingAssessmentService.calculateTotalScore(result);
