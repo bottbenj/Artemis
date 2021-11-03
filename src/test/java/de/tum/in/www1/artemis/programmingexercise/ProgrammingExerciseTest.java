@@ -2,9 +2,14 @@ package de.tum.in.www1.artemis.programmingexercise;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.time.ZonedDateTime;
+import java.util.Set;
+
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -12,13 +17,21 @@ import org.springframework.security.test.context.support.WithMockUser;
 
 import de.tum.in.www1.artemis.AbstractSpringIntegrationBambooBitbucketJiraTest;
 import de.tum.in.www1.artemis.domain.ProgrammingExercise;
+import de.tum.in.www1.artemis.domain.ProgrammingSubmission;
+import de.tum.in.www1.artemis.domain.Submission;
+import de.tum.in.www1.artemis.domain.enumeration.SubmissionType;
+import de.tum.in.www1.artemis.domain.participation.ProgrammingExerciseStudentParticipation;
 import de.tum.in.www1.artemis.repository.ProgrammingExerciseRepository;
+import de.tum.in.www1.artemis.repository.ProgrammingExerciseStudentParticipationRepository;
 import de.tum.in.www1.artemis.web.rest.ProgrammingExerciseResource;
 
 class ProgrammingExerciseTest extends AbstractSpringIntegrationBambooBitbucketJiraTest {
 
     @Autowired
     private ProgrammingExerciseRepository programmingExerciseRepository;
+
+    @Autowired
+    private ProgrammingExerciseStudentParticipationRepository participationRepository;
 
     private Long programmingExerciseId;
 
@@ -90,4 +103,35 @@ class ProgrammingExerciseTest extends AbstractSpringIntegrationBambooBitbucketJi
         assertThat(fromDb.getProblemStatement()).isEqualTo(newProblem);
     }
 
+    @ParameterizedTest
+    @ValueSource(booleans = { true, false })
+    @WithMockUser(value = "instructor1", roles = "INSTRUCTOR")
+    void findAppropriateSubmissionRespectingIndividualDueDate(boolean isSubmissionAfterIndividualDueDate) {
+        ProgrammingExercise exercise = programmingExerciseRepository.findByIdElseThrow(programmingExerciseId);
+        exercise.setDueDate(ZonedDateTime.now());
+        exercise = programmingExerciseRepository.save(exercise);
+
+        ProgrammingSubmission submission = new ProgrammingSubmission();
+        submission.setType(SubmissionType.OTHER);
+        if (isSubmissionAfterIndividualDueDate) {
+            submission.setSubmissionDate(ZonedDateTime.now().plusHours(26));
+        }
+        else {
+            // submission time after exercise due date but before individual due date
+            submission.setSubmissionDate(ZonedDateTime.now().plusHours(1));
+        }
+        submission = database.addProgrammingSubmission(exercise, submission, "student1");
+
+        ProgrammingExerciseStudentParticipation participation = participationRepository.findByExerciseIdAndStudentLogin(programmingExerciseId, "student1").get();
+        participation.setIndividualDueDate(ZonedDateTime.now().plusDays(1));
+        submission.setParticipation(participation);
+
+        Submission latestValidSubmission = exercise.findAppropriateSubmissionByResults(Set.of(submission));
+        if (isSubmissionAfterIndividualDueDate) {
+            assertThat(latestValidSubmission).isNull();
+        }
+        else {
+            assertThat(latestValidSubmission).isEqualTo(submission);
+        }
+    }
 }
