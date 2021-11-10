@@ -648,7 +648,7 @@ public class ProgrammingExerciseService {
      */
     public ProgrammingExercise updateTimeline(ProgrammingExercise updatedProgrammingExercise, @Nullable String notificationText) {
         var programmingExercise = programmingExerciseRepository.findByIdElseThrow(updatedProgrammingExercise.getId());
-        final ProgrammingExercise programmingExerciseBeforeUpdate = programmingExercise;
+        var releaseDateBeforeUpdate = programmingExercise.getReleaseDate();
         programmingExercise.setReleaseDate(updatedProgrammingExercise.getReleaseDate());
         programmingExercise.setDueDate(updatedProgrammingExercise.getDueDate());
         programmingExercise.setBuildAndTestStudentSubmissionsAfterDueDate(updatedProgrammingExercise.getBuildAndTestStudentSubmissionsAfterDueDate());
@@ -656,7 +656,7 @@ public class ProgrammingExerciseService {
         programmingExercise.setAssessmentDueDate(updatedProgrammingExercise.getAssessmentDueDate());
         ProgrammingExercise savedProgrammingExercise = programmingExerciseRepository.save(programmingExercise);
 
-        groupNotificationService.checkAndCreateAppropriateNotificationsWhenUpdatingExercise(programmingExerciseBeforeUpdate, savedProgrammingExercise, notificationText,
+        groupNotificationService.checkAndCreateAppropriateNotificationsWhenUpdatingExercise(releaseDateBeforeUpdate, savedProgrammingExercise, notificationText,
                 instanceMessageSendService);
 
         return savedProgrammingExercise;

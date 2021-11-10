@@ -55,23 +55,40 @@ public class GroupNotificationService {
      */
     public void checkAndCreateAppropriateNotificationsWhenUpdatingExercise(Exercise exerciseBeforeUpdate, Exercise exerciseAfterUpdate, String notificationText,
             InstanceMessageSendService instanceMessageSendService) {
+        checkAndCreateAppropriateNotificationsWhenUpdatingExercise(exerciseBeforeUpdate.getReleaseDate(), exerciseAfterUpdate, notificationText, instanceMessageSendService);
+    }
+
+    /**
+     * Auxiliary method that checks and creates appropriate notifications about exercise updates or updates the scheduled exercise-released notification
+     * @param initialReleaseDate is the release date of the exercise before it the update
+     * @param exerciseAfterUpdate is the updated exercise (needed to check potential difference in release date)
+     * @param notificationText holds the custom change message for the notification process
+     * @param instanceMessageSendService can initiate a scheduled notification
+     */
+    public void checkAndCreateAppropriateNotificationsWhenUpdatingExercise(ZonedDateTime initialReleaseDate, Exercise exerciseAfterUpdate, String notificationText,
+            InstanceMessageSendService instanceMessageSendService) {
         notifyAboutExerciseUpdate(exerciseAfterUpdate, notificationText);
 
         final ZonedDateTime updatedReleaseDate = exerciseAfterUpdate.getReleaseDate();
-        final ZonedDateTime initialReleaseDate = exerciseBeforeUpdate.getReleaseDate();
-        boolean releaseDateHasChanged = false;
+        boolean updateNotifications = false;
 
-        if ((updatedReleaseDate == null && initialReleaseDate != null) || (updatedReleaseDate != null && initialReleaseDate == null)) {
-            releaseDateHasChanged = true;
+        if ((updatedReleaseDate == null) != (initialReleaseDate == null)) {
+            updateNotifications = true;
         }
 
-        if (!releaseDateHasChanged && updatedReleaseDate != null && initialReleaseDate != null) {
-            if (!exerciseAfterUpdate.getReleaseDate().isEqual(exerciseBeforeUpdate.getReleaseDate())) {
-                releaseDateHasChanged = true;
+        if (!updateNotifications && updatedReleaseDate != null && initialReleaseDate != null) {
+            if (!updatedReleaseDate.isEqual(initialReleaseDate)) {
+                updateNotifications = true;
             }
         }
 
-        if (releaseDateHasChanged) {
+        // if the release changed from being in the past to being at a different time in the past notifications don't have to be rescheduled
+        if ((initialReleaseDate == null || initialReleaseDate.isBefore(ZonedDateTime.now())) &&
+            (updatedReleaseDate == null || updatedReleaseDate.isBefore(ZonedDateTime.now()))) {
+            updateNotifications = false;
+        }
+
+        if (updateNotifications) {
             checkNotificationForExerciseRelease(exerciseAfterUpdate, instanceMessageSendService);
         }
     }
